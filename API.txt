@@ -3,11 +3,10 @@
 ////////////////////////////////////
 
 - Component (abstraction d'un objet graphique)
-  moveWithoutAnimTo(new cx, new cy)
-  moveWithAnimTo(new cx, new cy, [duration, [delai]])
+  moveTo(new cx, new cy, [duration = 0, [delai = 0]])
   hide()
   show()
-  erase()
+  delete()
   drag(move,start,end)
   ....
 
@@ -23,7 +22,8 @@ Principe général:
 Dans cette couche, on a 4 grands types d'objets:
 - Un DraggableObject est un objet graphique destiné à être déplacé
 par drag and drop à la souris.
-- Une Cell peut contenir un ensemble de DraggableObject.
+- Une Cell peut contenir un ensemble de DraggableObject (souvent une
+Cell ne contiendra jamais plus d'un DraggableObject).
 - Une DropArea définit une zone qui réagit lorsqu'un DraggableObject
 est relaché à l'intérieur.
 - Le DragAndDropSystem qui permet de régir le tout.
@@ -31,10 +31,10 @@ est relaché à l'intérieur.
 	Considérons un syteme DragAndDropSytem myDragAndDropSystem
 avec un DraggableObject myDraggable appartenant à une Cell myCell.
 L'objet myDraggable est alors dans l'état "contained" et l'on
-peut accéder à myCell par myDraggable.currentCell. Lorsque l'utilisateur clique 
+peut accéder à myCell par myDraggable.getCurrentCell(). Lorsque l'utilisateur clique 
 sur myDraggable, la méthode myDraggable.canBeTaken() est invoquée. 
 Si la valeur renvoyée est false alors myDraggable reste immobile et rien 
-ne se passe, dans le cas contraire, le callback myDraggable.actionHasBeenTaken()
+ne se passe, dans le cas contraire, le callback myDraggable.actionWhenHasBeenTaken()
 est appelé puis le dragging s'enclenche et myDraggable se met à suivre la souris.
 
 	Lorsque le dragging commence, l'objet est dans un premier temps toujours 
@@ -44,24 +44,24 @@ la méthode myDraggable.hasLeaved() est appelée. Ce n'est que lorsque
 myDraggable.hasLeaved() renvoie une valeur differente de false, 
 que myDraggable se détache réellement de myCell et passe dans l'état "free"
 (on peut toujours accéder à myCell, mais il faut alors écrire,
-myDraggable.lastCell), une fois le detachement fait, le callback 
-myDraggable.actionHasBeenDetached() est appelé.
+myDraggable.getLastCell()), une fois le detachement fait, le callback 
+myDraggable.actionWhenHasBeenDetached() est appelé.
 Cette première phase peut sembler superflue mais
 elle est très utile en pratique car elle permet notamment de laisser 
 un peu de marge à l'utilisateur pour renoncer à un mouvement.
 
 	Dans l'état "free", myDraggable suit le mouvement de la souris tant
 que l'utilisateur ne relache pas le clique, et est associé à tout instant
-à une DropArea à laquelle on peut acceder par myDraggable.dropArea. 
+à une DropArea à laquelle on peut acceder par myDraggable.GetDropArea. 
 Chaque fois que myDraggable est déplacé dans l'état "free", la DropArea
 correspondante est recalculée selon un procédé décrit ci-après, si celle-ci
 est différente de la précédente, alors, dans l'ordre:
 		a) le callback myDraggable.actionEndOver() est appelé
-		b) myDraggable.dropArea est mis-à-jour
+		b) la DropArea de myDraggable est mise à jour
 		c) le callback myDraggable.actionOver() est appelé
 (NB: Au moment où myDraggable passe à l'état "free", b) et c) sont aussi
-successivement appelés juste après le callback myDraggable.actionHasBeenDetached())
-	Dans tous les cas, myDraggable.actionHasMoved(dx,dy) est ensuite appelée
+successivement appelés juste après le callback myDraggable.actionWhenHasBeenDetached())
+	Dans tous les cas, myDraggable.actionWhenHasMoved(dx,dy) est ensuite appelée
 (Remarque: dx et dy indiquent que l'objet a bougé de (dx,dy), le mouvement
 est donc deja fait au moment de l'appel).
 
@@ -84,27 +84,27 @@ par myDragAndDropSystem, alors successivement:
 	b) myDraggable est détruit
 Si au contraire myDraggable.findNewCell() renvoie un objet de type 
 Cell myNewCell "valide", myDraggable repasse dans l'etat "contained"
-et est attaché à myNewCell (notamment myDraggable.currentCell prend la
+et est attaché à myNewCell (notamment la "current cell" de myDraggable prend la
 valeur myNewCell, la Cell précédente étant toujours accessible par
-myDraggable.lastCell), puis le callback 
-myDraggable.actionHasBeenDropped() est appelé.
+myDraggable.getLastCell()), puis le callback 
+myDraggable.actionWhenHasBeenDropped() est appelé.
 
 
 Résumé des callbacks de DraggableObject:
 ----------------------------------------
 
 - canBeTaken()
-- actionHasBeenTaken()
+- actionWhenHasBeenTaken()
 - hasLeaved()
-- actionHasBeenDetached()
+- actionWhenHasBeenDetached()
 - actionEndOver()
 - actionOver()
-- actionHasMoved(dx,dy)
+- actionWhenHasMoved(dx,dy)
 - isInside(dropArea)
 - doesAccept(dropArea)
 - findNewCell()
 - actionBeforeDestroyed()
-- actionHasBeenDropped()
+- actionWhenHasBeenDropped()
 
 
 Chaine de responsabilité:
@@ -119,10 +119,10 @@ de sorte a ce que l'appelant soit mis au courant.
 
 Ainsi, les objets Cell disposent des callbacks:
 - canBeTaken(draggableObject)
-- actionHasBeenTaken(draggableObject)
+- actionWhenHasBeenTaken(draggableObject)
 - hasLeaved(draggableObject)
-- actionHasBeenDetached(draggableObject)
-- actionHasBeenDropped(draggableObject) (pour la Cell qui recoit)
+- actionWhenHasBeenDetached(draggableObject)
+- actionWhenHasBeenDropped(draggableObject) (pour la Cell qui recoit)
 
 Les objets DropArea, disposent eux des callbacks:
 - actionEndOver(draggableObject)
@@ -134,17 +134,17 @@ Les objets DropArea, disposent eux des callbacks:
 
 Enfin le dragAndDropSystem, disposent des callbacks:
 - canBeTaken(draggableObject)
-- actionHasBeenTaken(draggableObject)
+- actionWhenHasBeenTaken(draggableObject)
 - hasLeaved(draggableObject)
-- actionHasBeenDetached(draggableObject)
+- actionWhenHasBeenDetached(draggableObject)
 - actionEndOver(draggableObject)
 - actionOver(draggableObject)
-- actionHasMoved(draggableObject,dx,dy)
+- actionWhenHasMoved(draggableObject,dx,dy)
 - isInside(draggableObject,dropArea)
 - doesAccept(draggableObject,dropArea)
 - findNewCell(draggableObject,dropArea)
 - actionBeforeDestroyed(draggableObject)
-- actionHasBeenDropped(draggableObject)
+- actionWhenHasBeenDropped(draggableObject)
 
 
 Création des objets et callback par défaut:
@@ -156,6 +156,10 @@ Création des objets et callback par défaut:
 /////////////////////
 // API: Containers //
 /////////////////////
+
+ListCellContainer: 
+  - GetNbCells()
+  - GetCell(i)
 	
 	
 
