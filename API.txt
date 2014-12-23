@@ -1,62 +1,166 @@
-
-API: Component
+////////////////////////////////////
+// API: Component, wrap RaphaelJS //
+////////////////////////////////////
 
 - Component (abstraction d'un objet graphique)
   moveWithoutAnimTo(new cx, new cy)
   moveWithAnimTo(new cx, new cy, [duration, [delai]])
   hide()
   show()
-  drag(...,...,...)
+  erase()
+  drag(move,start,end)
+  ....
+
+  
+///////////////////////
+// API: Couche basse //
+///////////////////////
 
 
-API: Couche basse
-
-Principe:
+Principe général:
+-----------------
 
 Dans cette couche, on a 4 grands types d'objets:
 - Un DraggableObject est un objet graphique destiné à être déplacé
 par drag and drop à la souris.
-- Une Cell peut contenir une pile de DraggableObject
-(mais dans la grande majorité des cas d'utilisation, une cell
-n'en contient qu'au plus un à la fois à chaque instant).
+- Une Cell peut contenir un ensemble de DraggableObject.
 - Une DropArea définit une zone qui réagit lorsqu'un DraggableObject
 est relaché à l'intérieur.
 - Le DragAndDropSystem qui permet de régir le tout.
 
+	Considérons un syteme DragAndDropSytem myDragAndDropSystem
+avec un DraggableObject myDraggable appartenant à une Cell myCell.
+L'objet myDraggable est alors dans l'état "contained" et l'on
+peut accéder à myCell par myDraggable.currentCell. Lorsque l'utilisateur clique 
+sur myDraggable, la méthode myDraggable.canBeTaken() est invoquée. 
+Si la valeur renvoyée est false alors myDraggable reste immobile et rien 
+ne se passe, dans le cas contraire, le callback myDraggable.actionHasBeenTaken()
+est appelé puis le dragging s'enclenche et myDraggable se met à suivre la souris.
+
+	Lorsque le dragging commence, l'objet est dans un premier temps toujours 
+dans l'état "contained" (il appartient toujours à myCell et retourne a 
+sa position précédente s'il est laché) et à chaque mouvement
+la méthode myDraggable.hasLeaved() est appelée. Ce n'est que lorsque
+myDraggable.hasLeaved() renvoie une valeur differente de false, 
+que myDraggable se détache réellement de myCell et passe dans l'état "free"
+(on peut toujours accéder à myCell, mais il faut alors écrire,
+myDraggable.lastCell), une fois le detachement fait, le callback 
+myDraggable.actionHasBeenDetached() est appelé.
+Cette première phase peut sembler superflue mais
+elle est très utile en pratique car elle permet notamment de laisser 
+un peu de marge à l'utilisateur pour renoncer à un mouvement.
+
+	Dans l'état "free", myDraggable suit le mouvement de la souris tant
+que l'utilisateur ne relache pas le clique, et est associé à tout instant
+à une DropArea à laquelle on peut acceder par myDraggable.dropArea. 
+Chaque fois que myDraggable est déplacé dans l'état "free", la DropArea
+correspondante est recalculée selon un procédé décrit ci-après, si celle-ci
+est différente de la précédente, alors, dans l'ordre:
+		a) le callback myDraggable.actionEndOver() est appelé
+		b) myDraggable.dropArea est mis-à-jour
+		c) le callback myDraggable.actionOver() est appelé
+(NB: Au moment où myDraggable passe à l'état "free", b) et c) sont aussi
+successivement appelés juste après le callback myDraggable.actionHasBeenDetached())
+	Dans tous les cas, myDraggable.actionHasMoved(dx,dy) est ensuite appelée
+(Remarque: dx et dy indiquent que l'objet a bougé de (dx,dy), le mouvement
+est donc deja fait au moment de l'appel).
+
+Détaillons comment le calcul de la DropArea est fait: 
+Les DropArea du DragAndDropSystem sont appelées de la plus superficielle
+a la plus profonde, chaque fois que l'on considère une DropArea myDropArea
+myDraggable.isInside(myDropArea) étant appelée. Si la valeur
+false est retournée, alors on passe a la DropArea suivante. Sinon 
+myDraggable.doesAccept(myDropArea) est appelée. De meme, si la valeur
+renvoyée est fausse, alors on passe à la DropArea suivante. Sinon
+c'est myDropArea qui est séléctionnée et la boucle est interrompue.
+Si aucune DropArea n'a été acceptée, alors la valeur undefined est
+selectionnée.
+
+	Enfin, si myDraggable est relaché par l'utilisateur dans l'état "free",
+le callback myDraggable.findNewCell() est appelé. Si ce callback ne renvoie
+pas un objet de type Cell contenu dans la liste des Cell connues
+par myDragAndDropSystem, alors successivement: 
+	a) myDraggable.actionBeforeDestroyed() est appelée
+	b) myDraggable est détruit
+Si au contraire myDraggable.findNewCell() renvoie un objet de type 
+Cell myNewCell "valide", myDraggable repasse dans l'etat "contained"
+et est attaché à myNewCell (notamment myDraggable.currentCell prend la
+valeur myNewCell, la Cell précédente étant toujours accessible par
+myDraggable.lastCell), puis le callback 
+myDraggable.actionHasBeenDropped() est appelé.
 
 
-//Les objets déplacés par drag and drop 
-//sont définis par l'interface DraggableObjet. A chaque 
-//instant un DraggableObject est soit dans l'état "dragged"
-//(c'est-à-dire que son centre suit la position de la souris
-//de l'utilisateur), soit "contained" auquel cas il appartient
-//à un object Cell.
+Résumé des callbacks de DraggableObject:
+----------------------------------------
 
-Plus précisément, lorsqu'un
-DraggableObject de centre (cx,cy) est relaché (dropped), 
+- canBeTaken()
+- actionHasBeenTaken()
+- hasLeaved()
+- actionHasBeenDetached()
+- actionEndOver()
+- actionOver()
+- actionHasMoved(dx,dy)
+- isInside(dropArea)
+- doesAccept(dropArea)
+- findNewCell()
+- actionBeforeDestroyed()
+- actionHasBeenDropped()
 
 
+Chaine de responsabilité:
+-------------------------
+
+Bien souvent, il est utile de faire remonter les callbacks des
+DraggableObject vers un objet Cell ou un objet DropArea concerné
+qui eux meme peuvent faire remontrer la responsabilité, par exemple
+a leur DragAndDropSystem. La seule convention a respecter est de renvoyer
+undefined lorsque l'action/la permission/le predicat n'a pas été traité(e) 
+de sorte a ce que l'appelant soit mis au courant. 
+
+Ainsi, les objets Cell disposent des callbacks:
+- canBeTaken(draggableObject)
+- actionHasBeenTaken(draggableObject)
+- hasLeaved(draggableObject)
+- actionHasBeenDetached(draggableObject)
+- actionHasBeenDropped(draggableObject) (pour la Cell qui recoit)
+
+Les objets DropArea, disposent eux des callbacks:
+- actionEndOver(draggableObject)
+- actionOver(draggableObject)
+- isInside(draggableObject)
+- doesAccept(draggableObject)
+- findNewCell(draggableObject)
+- actionBeforeDestroyed()
+
+Enfin le dragAndDropSystem, disposent des callbacks:
+- canBeTaken(draggableObject)
+- actionHasBeenTaken(draggableObject)
+- hasLeaved(draggableObject)
+- actionHasBeenDetached(draggableObject)
+- actionEndOver(draggableObject)
+- actionOver(draggableObject)
+- actionHasMoved(draggableObject,dx,dy)
+- isInside(draggableObject,dropArea)
+- doesAccept(draggableObject,dropArea)
+- findNewCell(draggableObject,dropArea)
+- actionBeforeDestroyed(draggableObject)
+- actionHasBeenDropped(draggableObject)
 
 
-- DragAndDropSystem
-  paper
-  bool canBeTaken(idDraggableObject)
+Création des objets et callback par défaut:
+-------------------------------------------
 
-- DroppableZone :
-  dragAndDropSystem
-  id,
-  bool isInside(x,y)
-  bool canBeTaken(idDraggableObject)
+// TODO
+	
+		
+/////////////////////
+// API: Containers //
+/////////////////////
+	
+	
 
-- Cell
-  dragAndDropSystem
-  cx, cy (défini où centré l'objet lorsque contenu)
-  isInsideToleranceShape(cx,cy) //
-  idContainedDraggables // tableau  
-
-- DraggableObject:
-  dragAndDropSystem	
-  id,
-  component
-  state in {contained, dragged}
-  cell
+	
+	
+	
+	
+	
