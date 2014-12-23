@@ -1,0 +1,62 @@
+
+API: Component
+
+- Component (abstraction d'un objet graphique)
+  moveWithoutAnimTo(new cx, new cy)
+  moveWithAnimTo(new cx, new cy, [duration, [delai]])
+  hide()
+  show()
+  drag(...,...,...)
+
+
+API: Couche basse
+
+Principe:
+
+Dans cette couche, on a 4 grands types d'objets:
+- Un DraggableObject est un objet graphique destiné à être déplacé
+par drag and drop à la souris.
+- Une Cell peut contenir une pile de DraggableObject
+(mais dans la grande majorité des cas d'utilisation, une cell
+n'en contient qu'au plus un à la fois à chaque instant).
+- Une DropArea définit une zone qui réagit lorsqu'un DraggableObject
+est relaché à l'intérieur.
+- Le DragAndDropSystem qui permet de régir le tout.
+
+
+
+//Les objets déplacés par drag and drop 
+//sont définis par l'interface DraggableObjet. A chaque 
+//instant un DraggableObject est soit dans l'état "dragged"
+//(c'est-à-dire que son centre suit la position de la souris
+//de l'utilisateur), soit "contained" auquel cas il appartient
+//à un object Cell.
+
+Plus précisément, lorsqu'un
+DraggableObject de centre (cx,cy) est relaché (dropped), 
+
+
+
+
+- DragAndDropSystem
+  paper
+  bool canBeTaken(idDraggableObject)
+
+- DroppableZone :
+  dragAndDropSystem
+  id,
+  bool isInside(x,y)
+  bool canBeTaken(idDraggableObject)
+
+- Cell
+  dragAndDropSystem
+  cx, cy (défini où centré l'objet lorsque contenu)
+  isInsideToleranceShape(cx,cy) //
+  idContainedDraggables // tableau  
+
+- DraggableObject:
+  dragAndDropSystem	
+  id,
+  component
+  state in {contained, dragged}
+  cell
