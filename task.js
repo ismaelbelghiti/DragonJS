@@ -1,13 +1,13 @@
-var paper = Raphael(100,100,500,500);
-paper.rect(0,0,500,500);
-
-var arrayElems = [ paper.rect(-10,-10,20,20).attr('fill','red') ];
-var compo = component(20,20,arrayElems,paper);
+var paper = Raphael(100,100,500,300);
+paper.rect(0,0,300,300);
 
 var DD = DragAndDropSystem(paper);
-var myCell = createCell('c', DD);
-
+var myCell = DD.createCell({ident:'c'});
 myCell.hasLeft = function(draggableObjet) {return true;}
 
-var draggable = createDraggableObject_('dr', myCell, compo);
+var arrayElems = [ paper.rect(-10,-10,20,20).attr('fill','red') ];
+var draggable = myCell.createDraggableObject({
+    ident:'dr',
+    component:component(20,20,arrayElems,paper)
+});
 

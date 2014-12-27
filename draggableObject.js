@@ -1,11 +1,23 @@
-function createDraggableObject_(id, cell, component) {
+function createDraggableObject_(params) {
+
+    if(!params.ident) {
+	alert('ident should be specidied in draggableObject creation');
+    }
+    if(!params.cell) {
+	alert('cell should be specidied in draggableObject creation');
+    }
+    if(!params.component) {
+	alert('component should be specidied in draggableObject creation');
+    }
+    
     var that = this;
-    this.paper = cell.paper;
-    this.dragAndDropSystem = cell.dragAndDropSystem;
-    this.currentCell = cell;
+    this.paper = params.cell.paper;
+    this.dragAndDropSystem = params.cell.dragAndDropSystem;
+    this.currentCell = params.cell;
     this.lastCell = undefined;
-    this.component = component;
-    this.id = id;
+    this.currentDropArea = false;
+    this.component = params.component;
+    this.idend = params.ident;
     this.state = 'contained';
     var ddSystem = this.dragAndDropSystem;//alias
 
@@ -16,14 +28,89 @@ function createDraggableObject_(id, cell, component) {
     this.getLastCell = function() {
 	return this.lastCell;
     };
-    
-    this.allowsDrag = function() {
-	return true;
-    }
 
+    this.getCurrentDropArea = function() {
+	return this.currentDropArea;
+    };
+
+    this.remove = function() {
+	this.component.remove();
+    };
+    
+/////////////////
+// PERMISSIONS //
+/////////////////    
+    
+    this.canStartDrag = function() {
+	return this.allowsStartDrag;
+    };
+    
+    this.allowsStartDrag = function() {
+	return true;
+    };
+
+    this.canDrop = function(dropArea) {
+	return this.allowsDrop(dropArea);
+    };
+
+    this.allowsDrop = function(dropArea) {
+	return true;
+    };
+
+/////////////
+// Actions //
+/////////////
+
+    this.runActionsBeforeStartDrag = function() {
+	this.actionBeforeStartDrag();
+    };
+
+    this.actionBeforeStartDrag = function() {};
+
+    this.runActionsAfterDetached = function() {
+	this.actionAfterDetached();
+    };
+
+    this.actionAfterDetached = function() {};
+
+    this.runActionsOver = function() {
+	this.actionOver();
+    };
+
+    this.actionOver = function() {};
+
+    this.runActionsEndOver = function() {
+	this.actionEndOver();
+    };
+
+    this.actionEndOver = function() {};
+
+    this.runActionsAfterMoved = function(dx, dy) {
+	this.actionAfterMoved(dx,dy);
+    };
+
+    this.actionAfterMoved = function(dx, dy) {};
+    
+    this.runActionsAfterDropped = function() {
+	this.actionAfterDropped();
+    };
+
+    this.actionAfterDropped = function() {};
+
+    this.runActionsBeforeDestroyed = function() {
+	this.actionBeforeDestroyed();
+    };
+
+    this.actionBeforeDestroyed = function() {};
+    
+    
+///////////////////
+// Drag And Drop //
+///////////////////
+    
     var start = function()
     {
-	if(!ddSystem.canDrag(that))
+	if(!ddSystem.canStartDrag(that))
 	    return;
 	this.startcx = this.cx;
 	this.startcy = this.cy;
@@ -32,7 +119,7 @@ function createDraggableObject_(id, cell, component) {
 
     var move = function(dx,dy)
     {
-	if(!ddSystem.canDrag(that)) {
+	if(!ddSystem.canStartDrag(that)) {
 	    return;
 	}
 	if(isNaN(dx) || isNaN(dy)) {
@@ -43,37 +130,52 @@ function createDraggableObject_(id, cell, component) {
 	
 	if(that.state == 'contained') {
 	    if(that.getCurrentCell().hasLeft(that)) {
+		that.currentCell.detach(that);
 		that.state = 'free';
 		that.lastCell = that.currentCell;		
 	    }
-	    this.lastDropArea = undefined;
+	    that.currentDropArea = undefined;
 	}
 	
 	if(that.state == 'free') {
-	    // recherche de la dropArea
-	    // Si != de l'actuel
-	    //    if(this.lastDropArea) actionsEndOvers()
-	    //    this.lastDropArea = newDropArea;
-	    //    actionsOvers()
+	    var newDropArea = ddSystem.findDropArea(that);
+	    if(newDropArea != that.currentDropArea) {
+		if(that.currentDropArea) {
+		   ddSystem.runActionsEndOver(that.currentDropArea);
+		}
+		that.currentDropArea = newDropArea;
+		if(that.currentDropArea()) {
+		   ddSystem.runActionsEndOver(that.currentDropArea);
+		}
+	    }
+	    ddSystem.runActionsAfterMoved(that,dx,dy);
 	}
     }
 
     var up = function()
     {
-	if(!ddSystem.canDrag(that))
+	if(!ddSystem.canStartDrag(that))
 	    return;
 
 	if(that.state == 'contained')	{
 	    this.placeAt(this.startcx, this.startcy);	    
 	}
-	// todo find new cell
-	ddSystem.runActionsWhenHasBeenDropped(that);
+	var newCell = ddSystem.findNewCell(that);
+	if(newCell) { // TODO: test also if newCell is known by ddSystem
+	    that.currentCell = newCell;
+	    newCell.attach(that);
+	    that.state = 'contained';
+	    ddSystem.runActionsAfterDropped(that);
+	} else {
+	    ddSystem.runActionsBeforeDestroyed(that);
+	    that.remove();
+	}
     }
     
     this.component.drag(move,start,up);		
 };
 
 
-function createDraggableObject(id,cell,component) {
-    return new createDraggableObject_(id,cell,component);
+function createDraggableObject(params) {
+    return new createDraggableObject_(params);
 }

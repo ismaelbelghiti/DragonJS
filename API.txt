@@ -1,10 +1,10 @@
 ////////////////////////////////////
-// API: Component, wrap RaphaelJS //
+n// API: Component, wrap RaphaelJS //
 ////////////////////////////////////
 
 - Component (abstraction d'un objet graphique)
   moveTo(new cx, new cy, [duration = 0, [delai = 0]])
-  hide()
+ nn hide()
   show()
   delete()
   drag(move,start,end)
@@ -32,28 +32,28 @@ est relaché à l'intérieur.
 avec un DraggableObject myDraggable appartenant à une Cell myCell.
 L'objet myDraggable est alors dans l'état "contained" et l'on
 peut accéder à myCell par myDraggable.getCurrentCell(). Lorsque l'utilisateur clique 
-sur myDraggable, la méthode myDragAndDropSystem.canBeTaken(myDraggable) est invoquée. 
+sur myDraggable, la méthode myDragAndDropSystem.canStartDrag(myDraggable) est invoquée. 
 Si la valeur renvoyée est false alors myDraggable reste immobile et rien 
 ne se passe, dans le cas contraire, le callback
-myDragAndDropSystem.runActionsWhenHasBeenTaken(myDraggable)
+myDragAndDropSystem.runActionsStartDrag(myDraggable)
 est appelé puis le dragging s'enclenche et myDraggable se met à suivre la souris.
 
 	Lorsque le dragging commence, l'objet est dans un premier temps toujours 
 dans l'état "contained" (il appartient toujours à myCell et retourne a 
 sa position précédente s'il est laché) et à chaque mouvement
-la méthode myCell.hasLeaved(myDraggable) est appelée. Ce n'est que lorsque
-myCell.hasLeaved(myDraggable) renvoie une valeur differente de false, 
+la méthode myCell.hasLeft(myDraggable) est appelée. Ce n'est que lorsque
+myCell.hasLeft(myDraggable) renvoie une valeur differente de false, 
 que myDraggable se détache réellement de myCell et passe dans l'état "free"
 (on peut toujours accéder à myCell, mais il faut alors écrire,
 myDraggable.getLastCell()), une fois le detachement fait, la méthode 
-myDragAndDropSystems.runActionsWhenHasBeenDetached(myDraggable) est appelé.
+myDragAndDropSystems.runActionsDetached(myDraggable) est appelé.
 Cette première phase peut sembler superflue mais
 elle est très utile en pratique car elle permet notamment de laisser 
 un peu de marge à l'utilisateur pour renoncer à un mouvement.
 
 	Dans l'état "free", myDraggable suit le mouvement de la souris tant
 que l'utilisateur ne relache pas le clique, et est associé à tout instant
-à une DropArea à laquelle on peut acceder par myDraggable.GetDropArea(). 
+à une DropArea à laquelle on peut acceder par myDraggable.GetCurrentDropArea(). 
 Chaque fois que myDraggable est déplacé dans l'état "free", la DropArea
 correspondante est recalculée selon un procédé décrit ci-après, si celle-ci
 est différente de la précédente, alors, dans l'ordre:
@@ -95,21 +95,6 @@ Principaux Callbacks et valeur par défaut
 -----------------------------------------
 
 DragAndDropSystem:
-	- canBeTaken(draggableObject):
-	     default: return draggableObjet.Ath
-	- runActionsWhenHasBeenTaken(draggableObject)
-	     default:
-		this.actionWhenHasBeenTaken(draggableObject)
-		this.draggable.GetCell().actionWhenHasBeenTaken(draggableObjet)
-		draggableObjet.actionWhenHasBeenTaken()
-	- runActionsWhenHasBeenDetached(draggableObject)
-	- runActionsEndOver(draggableObject)
-	- runActionsOver(draggableObject)
-	- runActionsWhenHasMoved(draggableObject,dx,dy)
-	- doesAccept(draggableObject,dropArea)
-	- findNewCell(draggableObject,dropArea)
-	- runActionsBeforeDestroyed(draggableObject)
-	- runActionsWhenHasBeenDropped(draggableObject)
 
 
 
