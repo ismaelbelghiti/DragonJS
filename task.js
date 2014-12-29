@@ -8,7 +8,7 @@ var myCell1 = DD.createCell({
     component:component(350,350,
 	[paper.rect(-50,-50,100,100).attr('fill','blue')],paper),
     centered:true,
-    hasLeft: function(draggableObject) { return true; }    
+    hasLeft: function(draggableObject) { return true; }
 });
 
 var myCell2 = DD.createCell({
