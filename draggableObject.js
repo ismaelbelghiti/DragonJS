@@ -1,26 +1,36 @@
 function createDraggableObject_(params) {
-
-    if(!params.ident) {
-	alert('ident should be specidied in draggableObject creation');
-    }
-    if(!params.cell) {
-	alert('cell should be specidied in draggableObject creation');
-    }
-    if(!params.component) {
-	alert('component should be specidied in draggableObject creation');
-    }
-    
     var that = this;
+
+    // identifier
+    if(!params.ident) {
+	alert('ident should be specified in draggableObject creation');
+    }
+    this.ident = params.ident;
+
+    // component
+    if(!params.component) {
+	alert('component should be specified in draggableObject creation');
+    }
+    this.component = params.component;
+
+    // starting cell
+    if(!params.cell) {
+	alert('cell should be specified in draggableObject creation');
+    }
     this.paper = params.cell.paper;
     this.dragAndDropSystem = params.cell.dragAndDropSystem;
     this.currentCell = params.cell;
+    this.currentCell.attach(this);
+    this.state = 'contained';    
     this.lastCell = undefined;
-    this.currentDropArea = false;
-    this.component = params.component;
-    this.idend = params.ident;
-    this.state = 'contained';
-    var ddSystem = this.dragAndDropSystem;//alias
 
+    //drop area
+    this.currentDropArea = false;
+
+    //alias
+    var ddSystem = this.dragAndDropSystem;
+
+    
     this.getCurrentCell = function() {
 	return this.currentCell;
     };
@@ -141,11 +151,11 @@ function createDraggableObject_(params) {
 	    var newDropArea = ddSystem.findDropArea(that);
 	    if(newDropArea != that.currentDropArea) {
 		if(that.currentDropArea) {
-		   ddSystem.runActionsEndOver(that.currentDropArea);
+		   ddSystem.runActionsEndOver(that);
 		}
 		that.currentDropArea = newDropArea;
-		if(that.currentDropArea()) {
-		   ddSystem.runActionsEndOver(that.currentDropArea);
+		if(that.currentDropArea) {
+		   ddSystem.runActionsOver(that);
 		}
 	    }
 	    ddSystem.runActionsAfterMoved(that,dx,dy);

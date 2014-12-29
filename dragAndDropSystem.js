@@ -6,9 +6,11 @@ function DragAndDropSystem_(paper) {
 // CREATIONS //
 ///////////////
 
-    this.createDropArea = function(ident) {
-	this.dropAreas.push(createDropArea(id,this));
-	return this.dropAreas.back();
+    this.createDropArea = function(params_) {
+	var params = createCopy(params_);
+	params.dragAndDropSystem = this;
+	this.dropAreas.push(createDropArea(params));
+	return this.dropAreas[this.dropAreas.length-1];
     };
 
     this.createCell = function(params_) {
@@ -16,7 +18,6 @@ function DragAndDropSystem_(paper) {
 	params.dragAndDropSystem = this;
 	return createCell(params);
     };
-
     
 /////////////////
 // PERMISSIONS //
@@ -56,10 +57,10 @@ function DragAndDropSystem_(paper) {
     };
 
     this.findDropArea = function(draggableObject) {
-	for(var i = 0; i < this.dropAreas.length; i++) {
-	    if(dropAreas[i].doesContain(draggableObject)
-	      && this.canDrop(draggableObject,dropAreas[i])) {
-		return dropAreas[i];
+	for(var i = this.dropAreas.length-1; i >= 0; i--) {
+	    if(this.dropAreas[i].doesContain(draggableObject)
+	      && this.canDrop(draggableObject,this.dropAreas[i])) {
+		return this.dropAreas[i];
 	    }
 	}
 	return undefined;
