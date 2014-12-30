@@ -23,6 +23,12 @@ function DragAndDropSystem_(params) {
 	params.dragAndDropSystem = this;
 	return createCell(params);
     };
+	
+	this.createSourceCell = function(params_) {
+	var params = createCopy(params_);
+	params.dragAndDropSystem = this;
+	return createSourceCell(params);
+    };
     
 /////////////////
 // PERMISSIONS //

@@ -11,19 +11,29 @@ function createCell_(params) {
     }
     this.dragAndDropSystem = params.dragAndDropSystem;
     this.paper = this.dragAndDropSystem.paper;
-
+	
     this.component = component(0,0,[],paper);//empty compo by default
     if(params.component) {
 	this.component = params.component;
 	this.cx = params.component.cx;
 	this.cy = params.component.cy;
     }
+	if(params.cx) {
+		this.cx = params.cx;
+	}
+	if(params.cy) {
+		this.cy = params.cy;
+	}
 
     this.centered = false;
     if(params.centered != undefined) {
 	this.centered = params.centered;
     }
 
+	if(this.centered && (!params.cx || !params.cy) && !params.component) {
+	    alert('cx,cy (or component) should be specified in cell creation when "centered" is enabled');
+	}
+	
     this.containedDraggables = [];
 
 ///////////////////////////
@@ -53,12 +63,15 @@ function createCell_(params) {
 	this.containedDraggables.pop();
     };
 
-    this.attach = function(draggableObject) {
+    this.attach = function(draggableObject,durationInMs) {
+	if(!durationInMs) {
+		durationInMs = 0;
+	}
 	if(this.centered) {
-	    var durationInMs = 100;
 	    draggableObject.component.placeAtWithAnim(this.cx,this.cy,durationInMs);
 	}
 	this.containedDraggables.push(draggableObject);
+	return this.containedDraggables[this.containedDraggables.length-1];
     };
 
 ///////////////
@@ -112,7 +125,7 @@ function createCell_(params) {
 //////////////////    
     
     this.hasLeft = function(draggableObject) {
-	return false;
+	return true;
     };
     if(params.hasLeft) {
 	this.hasLeft = params.hasLeft;
@@ -158,7 +171,6 @@ function createCell_(params) {
 	this.runActionsAfterDropped = params.runActionsAfterDropped;
     }
 
-
     this.actionAfterDropped = function(draggableObject) {
     };
     if(params.actionAfterDropped) {
@@ -170,6 +182,60 @@ function createCell_(params) {
 function createCell(params) {
     return new createCell_(params);
 }
+
+function createSourceCell(params_) {
+    var params = createCopy(params_);
+	
+	// sourceComponent and center
+	if(!params.sourceComponent) {
+	    alert('sourceComponent should be specified in source cell creation');
+	}
+	if(!params.cx && !params.cy) {
+	    alert('cx,cy (or component) should be specified in source cell creation'); 
+	}
+	params.centered = true;
+	
+	// production mode : TODO finalize
+	if(!params.productionMode) {
+		params.productionMode = 'beforeDestroyed';
+	}
+	
+	
+	var res = createCell(params);
+
+	// create draggable
+	if(params.productionMode == 'beforeDestroyed') {
+		var curId = -1;
+		res.createNewDraggable = function(compo) {
+			curId++;
+			return res.createDraggableObject({
+				ident: (res.ident + '_prod_' + curId),
+				component: params.sourceComponent.clone().placeAt(res.cx,res.cy),
+				actionBeforeDestroyed: function() { 
+					res.createNewDraggable(this.component); 
+					console.log('new');
+				}
+			});
+		}
+	}
+	
+	res.createNewDraggable(params.sourceComponent);
+	
+	
+	return res;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,7 +1,9 @@
 var paper = Raphael(100,100,500,500);
 paper.rect(0,0,500,500);
 
-var DD = DragAndDropSystem(paper);
+var DD = DragAndDropSystem({
+	paper:paper
+});
 
 var myCell1 = DD.createCell({
     ident:'c1',
@@ -19,6 +21,13 @@ var myCell2 = DD.createCell({
     hasLeft: function(draggableObject) { return true; }    
 });
 
+var sourceCell = DD.createSourceCell({
+	ident:'source1',
+	cx:100,
+	cy:100,
+	sourceComponent:component(0,0,[paper.rect(-10,-10,20,20).attr('fill','green')],paper)
+});
+
 var myDropBackground = DD.createDropArea({
     ident: 'back',
     doesContain: function(draggableObject) {
@@ -31,7 +40,7 @@ var myDropBackground = DD.createDropArea({
 	console.log('end over back');
     },
     findNewCell: function(draggableObject) {
-	return draggableObject.getLastCell();
+	return undefined;//draggableObject.getLastCell();
     }
 });
 

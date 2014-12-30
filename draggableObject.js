@@ -29,7 +29,6 @@ function createDraggableObject_(params) {
 
     //alias
     var ddSystem = this.dragAndDropSystem;
-
     
     this.getCurrentCell = function() {
 	return this.currentCell;
@@ -46,73 +45,144 @@ function createDraggableObject_(params) {
     this.remove = function() {
 	this.component.remove();
     };
+
     
 /////////////////
 // PERMISSIONS //
 /////////////////    
     
+	// start drag
     this.canStartDrag = function() {
 	return this.allowsStartDrag;
     };
+	if(params.canStartDrag) {
+	this.canStartDrag = params.canStartDrag;
+    }
     
     this.allowsStartDrag = function() {
 	return true;
     };
-
+    if(params.allowsStartDrag) {
+	this.allowsStartDrag = params.allowsStartDrag;
+    }
+	
+	// drop
     this.canDrop = function(dropArea) {
 	return this.allowsDrop(dropArea);
     };
-
+    if(params.canDrop) {
+	this.canDrop = params.canDrop;
+    }
+	
     this.allowsDrop = function(dropArea) {
 	return true;
     };
-
+    if(params.allowsDrop) {
+	this.allowsDrop = params.allowsDrop;
+    }
+	
 /////////////
 // Actions //
 /////////////
 
+	// before start drag
     this.runActionsBeforeStartDrag = function() {
 	this.actionBeforeStartDrag();
     };
+	if(params.runActionsBeforeStartDrag) {
+	this.runActionsBeforeStartDrag = params.runActionsBeforeStartDrag;
+    }
 
-    this.actionBeforeStartDrag = function() {};
+    this.actionBeforeStartDrag = function() {
+	};
+	if(params.actionBeforeStartDrag) {
+	this.actionBeforeStartDrag = params.actionBeforeStartDrag;
+    }
 
+	// after detached
     this.runActionsAfterDetached = function() {
 	this.actionAfterDetached();
     };
+	if(params.runActionsAfterDetached) {
+	this.runActionsAfterDetached = params.runActionsAfterDetached;
+    }
 
-    this.actionAfterDetached = function() {};
-
+    this.actionAfterDetached = function() {
+	};
+    if(params.actionAfterDetached) {
+	this.actionAfterDetached = params.actionAfterDetached;
+    }
+	
+	// over
     this.runActionsOver = function() {
 	this.actionOver();
     };
-
-    this.actionOver = function() {};
-
+    if(params.runActionsOver) {
+	this.runActionsOver = params.runActionsOver;
+    }
+	
+    this.actionOver = function() {
+	};
+    if(params.actionOver) {
+	this.actionOver = params.actionOver;
+    }
+	
+	// end over
     this.runActionsEndOver = function() {
 	this.actionEndOver();
     };
+    if(params.runActionsEndOver) {
+	this.runActionsEndOver = params.runActionsEndOver;
+    }
 
-    this.actionEndOver = function() {};
+    this.actionEndOver = function() {
+	};
+	if(params.actionEndOver) {
+	this.actionEndOver = params.actionEndOver;
+    }
 
+	// after moved
     this.runActionsAfterMoved = function(dx, dy) {
 	this.actionAfterMoved(dx,dy);
     };
+    if(params.runActionsAfterMoved) {
+	console.log('overl');
+	this.runActionsAfterMoved = params.runActionsAfterMoved;
+    }	
 
-    this.actionAfterMoved = function(dx, dy) {};
-    
+    this.actionAfterMoved = function(dx, dy) {
+	};
+    if(params.actionAfterMoved) {
+	this.actionAfterMoved = params.actionAfterMoved;
+    }
+	
+	// after dropped
     this.runActionsAfterDropped = function() {
 	this.actionAfterDropped();
     };
-
-    this.actionAfterDropped = function() {};
-
+    if(params.runActionsAfterDropped) {
+	this.runActionsAfterDropped = params.runActionsAfterDropped;
+    }
+	
+    this.actionAfterDropped = function() {
+	};
+    if(params.actionAfterDropped) {
+	this.actionAfterDropped = params.actionAfterDropped;
+    }
+	
+	// before destroyed
     this.runActionsBeforeDestroyed = function() {
 	this.actionBeforeDestroyed();
     };
-
-    this.actionBeforeDestroyed = function() {};
-    
+    if(params.runActionsBeforeDestroyed) {
+	this.runActionsBeforeDestroyed = params.runActionsBeforeDestroyed;
+    }
+	
+    this.actionBeforeDestroyed = function() {
+	};
+    if(params.actionBeforeDestroyed) {
+	this.actionBeforeDestroyed = params.actionBeforeDestroyed;
+    }    
     
 ///////////////////
 // Drag And Drop //
@@ -168,12 +238,14 @@ function createDraggableObject_(params) {
 	    return;
 
 	if(that.state == 'contained')	{
-	    this.placeAt(this.startcx, this.startcy);	    
+	    this.placeAt(this.startcx, this.startcy);	
+        return;		
 	}
 	var newCell = ddSystem.findNewCell(that);
 	if(newCell) { // TODO: test also if newCell is known by ddSystem
 	    that.currentCell = newCell;
-	    newCell.attach(that);
+		var durationInMs = 100;
+	    newCell.attach(that,durationInMs);
 	    that.state = 'contained';
 	    ddSystem.runActionsAfterDropped(that);
 	} else {
